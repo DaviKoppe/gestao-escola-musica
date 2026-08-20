@@ -1,0 +1,19 @@
+<h1>Registrar Pagamento</h1>
+
+<p>Aluno: {{ mensalidade.aluno.nome }}</p>
+<p>Valor: R$ {{ mensalidade.valor }}</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    <label>Forma de pagamento:</label>
+    <select name="forma_pagamento">
+        <option value="pix">Pix</option>
+        <option value="dinheiri">Dinheiro</option>
+        <option value="cartao">Cartão</option>
+    </select>
+
+    <br><br>
+
+    <button type="submit">Confirmar</button>
+</form>

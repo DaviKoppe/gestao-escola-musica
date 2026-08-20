@@ -1,0 +1,13 @@
+<h1>Histórico de Pagamentos</h1>
+
+<h2>{{ aluno.nome }}</h2>
+
+<ul>
+    {% for p in pagamentos %}
+        <li>
+            {{ p.data_pagamento }} - R$ {{ p.valor_pago }} - {{ p.forma_pagamento }}
+        </li>
+    {% empty %}
+        <li>Nenhum pagamento encontrado</li>
+    {% endfor %}
+</ul>
