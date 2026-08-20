@@ -1,5 +1,5 @@
 import {useState} from "react";
-import axios from "axios";
+import api from "../services/api";
 
 function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
     const [criandoCurso, setCriandoCurso] = useState(false);
@@ -10,8 +10,8 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
             return
         }
 
-        axios.post(
-            "http://127.0.0.1:5000/api/cursos/",
+        api.post(
+            "/api/cursos/",
             {nome: nomeCurso}
         )
             .then((response) => {

@@ -1,5 +1,5 @@
 import { useEffect, useState} from "react";
-import axios from "axios";
+import api from "../services/api"
 
 function Cursos(){
     const [cursos, setCursos] = useState([]);
@@ -7,15 +7,15 @@ function Cursos(){
     const [nomeCurso, setNomeCurso] = useState("");
 
     useEffect(() => {
-        axios.get("http://127.0.0.1:8000/api/cursos")
+        api.get("/api/cursos")
             .then((response) => setCursos(response.data))
     }, []);
 
     console.log(cursos);
 
     function criarCurso() {
-        axios.post(
-            "http://127.0.0.1:8000/api/cursos/",
+        api.post(
+            "/api/cursos/",
             {
                 nome: nomeCurso
             }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../services/api"
 
 function Mensalidades() {
     const [mensalidades, setMensalidades] = useState([]);
@@ -8,14 +8,14 @@ function Mensalidades() {
     const [mensalidadeSelecionada, setMensalidadeSelecionada] = useState("");
 
     useEffect(() => {
-        axios.get("http://127.0.0.1:8000/api/mensalidades/")
+        api.get("/api/mensalidades/")
             .then((response) => setMensalidades(response.data))
     }, [])
     console.log(mensalidades)
 
     function registrarPagamento() {
-        axios.post(
-            `http://127.0.0.1:8000/api/mensalidades/${mensalidadeSelecionada.id}/pagar/`,
+        api.post(
+            `/api/mensalidades/${mensalidadeSelecionada.id}/pagar/`,
             {
                 forma_pagamento: formaPagamento,
                 numero_nota: numeroNota
@@ -24,7 +24,7 @@ function Mensalidades() {
             .then((response) => {
                 console.log("Pagamento registrado:", response.data);
 
-                axios.get("http://127.0.0.1:8000/api/mensalidades/")
+                api.get("/api/mensalidades/")
                     .then((response) => setMensalidades(response.data));
 
                 setMensalidadeSelecionada(null);

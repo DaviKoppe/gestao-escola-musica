@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
-import axios from "axios"
+import api from "../services/api"
 import Aluno from "../models/Aluno"
 import FormularioAluno from "../components/FormularioAluno"
 
 function Alunos() {
+    console.log("API URL:", import.meta.env.VITE_API_URL)
   const [alunos, setAlunos] = useState([])
   const [cursos, setCursos] = useState([])
   const [mensalidades, setMensalidades] = useState([])
@@ -15,13 +16,14 @@ function Alunos() {
   const [numeroNota, setNumeroNota] = useState("")
 
   useEffect(() => {
-    axios.get("http://127.0.0.1:8000/api/alunos/")
+    api.get("/api/alunos/")
       .then((response) => setAlunos(response.data))
 
-    axios.get("http://127.0.0.1:8000/api/cursos/")
-      .then((response) => setCursos(response.data))
+    api.get("/api/cursos/")
+        .then((response) => setCursos(response.data))
+        .catch((error) => console.log("ERRO CURSOS:", error))
 
-    axios.get("http://127.0.0.1:8000/api/mensalidades/")
+    api.get("/api/mensalidades/")
         .then((response) => setMensalidades(response.data))
   }, [])
 
@@ -37,8 +39,8 @@ function Alunos() {
     }
     console.log(novoAluno)
 
-    axios.post(
-        "http://127.0.0.1:8000/api/alunos/",
+    api.post(
+        "/api/alunos/",
         novoAluno
     )
     .then((response) => {
@@ -46,7 +48,7 @@ function Alunos() {
       setAlunos([...alunos, response.data])
       setAluno(new Aluno())
 
-      axios.get("http://127.0.0.1:8000/api/mensalidades/")
+      api.get("/api/mensalidades/")
           .then((response) => setMensalidades(response.data))
     })
     .catch((error) => {
@@ -55,7 +57,7 @@ function Alunos() {
   }
 
   const excluirAluno = (id) => {
-    axios.delete(`http://127.0.0.1:8000/api/alunos/${id}/`)
+    api.delete(`/api/alunos/${id}/`)
       .then(() => {
         setAlunos(alunos.filter((aluno) => aluno.id !== id))
       })
@@ -92,7 +94,7 @@ function Alunos() {
       dia_vencimento: aluno.diaVencimento
     }
 
-    axios.patch(`http://127.0.0.1:8000/api/alunos/${idAlunoEditando}/`, alunoAtualizado)
+    api.patch(`/api/alunos/${idAlunoEditando}/`, alunoAtualizado)
       .then((response) => {
         setAlunos(alunos.map((aluno) => (aluno.id === idAlunoEditando ? response.data : aluno)))
         setIdAlunoEditando(null)
@@ -110,8 +112,8 @@ function Alunos() {
       numero_nota: numeroNota
     }
 
-    axios.post(
-        `http://127.0.0.1:8000/api/mensalidades/${mensalidade.id}/pagar/`,
+    api.post(
+        `/api/mensalidades/${mensalidade.id}/pagar/`,
         dadosPagamento
     )
         .then((response) => {

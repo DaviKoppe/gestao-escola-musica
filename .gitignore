@@ -29,5 +29,4 @@ backend/.git-backup/
 
 # Arquivos de backup
 *BKP*
-# Git antigo do backend
-backend/.git-backup/
+
