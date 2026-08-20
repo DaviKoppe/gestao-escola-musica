@@ -4,7 +4,6 @@ import Aluno from "../models/Aluno"
 import FormularioAluno from "../components/FormularioAluno"
 
 function Alunos() {
-    console.log("API URL:", import.meta.env.VITE_API_URL)
   const [alunos, setAlunos] = useState([])
   const [cursos, setCursos] = useState([])
   const [mensalidades, setMensalidades] = useState([])
@@ -21,7 +20,7 @@ function Alunos() {
 
     api.get("/api/cursos/")
         .then((response) => setCursos(response.data))
-        .catch((error) => console.log("ERRO CURSOS:", error))
+        .catch((error) => console.log(error))
 
     api.get("/api/mensalidades/")
         .then((response) => setMensalidades(response.data))
@@ -37,14 +36,12 @@ function Alunos() {
       endereco: aluno.endereco,
       dia_vencimento: aluno.diaVencimento
     }
-    console.log(novoAluno)
 
     api.post(
         "/api/alunos/",
         novoAluno
     )
     .then((response) => {
-      console.log(response.data)
       setAlunos([...alunos, response.data])
       setAluno(new Aluno())
 
@@ -100,10 +97,6 @@ function Alunos() {
         setIdAlunoEditando(null)
         setAluno(new Aluno())
       })
-      .catch((error) => {
-        console.log("STATUS:", error.response?.status)
-        console.log("ERRO:", error.response?.data)
-      })
   }
 
   const pagarMensalidade = (mensalidade) => {
@@ -116,9 +109,7 @@ function Alunos() {
         `/api/mensalidades/${mensalidade.id}/pagar/`,
         dadosPagamento
     )
-        .then((response) => {
-          console.log("Pagamento realizado:", response.data)
-
+        .then(() => {
           setMensalidades(
               mensalidades.map((item) =>
                   item.id === mensalidade.id
@@ -133,10 +124,6 @@ function Alunos() {
           setIdAlunoPagando(null)
           setFormaPagamento("pix")
           setNumeroNota("")
-        })
-        .catch((error) => {
-          console.log("STATUS:", error.response?.status)
-          console.log("ERRO:", error.response?.data)
         })
   }
 

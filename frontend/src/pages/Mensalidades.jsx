@@ -11,7 +11,6 @@ function Mensalidades() {
         api.get("/api/mensalidades/")
             .then((response) => setMensalidades(response.data))
     }, [])
-    console.log(mensalidades)
 
     function registrarPagamento() {
         api.post(
@@ -21,9 +20,7 @@ function Mensalidades() {
                 numero_nota: numeroNota
             }
         )
-            .then((response) => {
-                console.log("Pagamento registrado:", response.data);
-
+            .then(() => {
                 api.get("/api/mensalidades/")
                     .then((response) => setMensalidades(response.data));
 

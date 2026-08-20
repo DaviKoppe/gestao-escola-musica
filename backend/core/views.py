@@ -206,7 +206,6 @@ def lista_mensalidades(request):
 @csrf_exempt
 @api_view(['POST'])
 def registrar_pagamento_api(request, mensalidade_id):
-    print("DADOS RECEBIDOS:", request.data)
 
     mensalidade = get_object_or_404(Mensalidade, id=mensalidade_id)
 

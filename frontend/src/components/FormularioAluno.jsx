@@ -25,10 +25,6 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
                 setNomeCurso("")
                 setCriandoCurso(false)
             })
-            .catch((error) => {
-                console.log("STATUS:", error.response?.status)
-                console.log("ERRO:", error.response?.data)
-            })
     }
     return (
         <>

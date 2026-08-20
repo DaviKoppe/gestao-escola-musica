@@ -11,8 +11,6 @@ function Cursos(){
             .then((response) => setCursos(response.data))
     }, []);
 
-    console.log(cursos);
-
     function criarCurso() {
         api.post(
             "/api/cursos/",
@@ -21,8 +19,6 @@ function Cursos(){
             }
         )
             .then((response) => {
-                console.log("Curso criado:", response.data);
-
                 setCursos((cursosAtuais) => [
                     ...cursosAtuais,
                     response.data
