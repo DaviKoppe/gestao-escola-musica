@@ -170,7 +170,7 @@ function Alunos() {
                     {mensalidade && (
                         <div>
                           <h3>Mensalidade</h3>
-                          <p>Valor: R$ {Number(mensalidade.valor).toFixed(2)}</p>
+                          <p>Valor: R$ {Number(aluno.valor_mensalidade).toFixed(2)}</p>
                           <p>Status: {mensalidade.status}</p>
                           <p>Vencimento: {mensalidade.data_vencimento}</p>
 
