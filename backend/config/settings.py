@@ -31,7 +31,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,gestao-escola-musica.onrender.com",
+    "localhost,127.0.0.1,gestao-escola-musica-api.onrender.com"
 ).split(",")
 
 
