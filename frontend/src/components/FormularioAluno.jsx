@@ -1,6 +1,14 @@
 import {useState} from "react";
 import api from "../services/api";
 
+const inputClasses =
+    "border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-800 " +
+    "focus:outline-none focus:ring-2 focus:ring-purple-400 w-full";
+
+const buttonClasses =
+    "px-3 py-2 rounded-md bg-purple-500 text-white text-sm font-medium " +
+    "hover:bg-purple-600 transition-colors";
+
 function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
     const [criandoCurso, setCriandoCurso] = useState(false);
     const [nomeCurso, setNomeCurso] = useState("");
@@ -26,8 +34,9 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
                 setCriandoCurso(false)
             })
     }
+
     return (
-        <>
+        <div className="flex flex-col gap-3 w-full">
             <input
                 type="text"
                 placeholder="Nome do aluno"
@@ -35,14 +44,16 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
                 onChange={(e) =>
                     setAluno(aluno.atualizarCampos({ nome: e.target.value }))
                 }
+                className={inputClasses}
             />
 
-            <div>
+            <div className="flex gap-2 items-center">
                 <select
                     value={aluno.curso}
                     onChange={(e) =>
                         setAluno(aluno.atualizarCampos({ curso: e.target.value }))
                     }
+                    className={inputClasses}
                 >
                     <option value="">Selecione um curso</option>
 
@@ -53,21 +64,22 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
                     ))}
                 </select>
 
-                <button onClick={() => setCriandoCurso(!criandoCurso)}>
+                <button onClick={() => setCriandoCurso(!criandoCurso)} className={buttonClasses}>
                     {criandoCurso ? "Cancelar" : "+ Criar curso"}
                 </button>
             </div>
 
             {criandoCurso && (
-                <div>
+                <div className="flex gap-2 items-center">
                     <input
                         type="text"
                         placeholder="Nome do novo curso"
                         value={nomeCurso}
                         onChange={(e) => setNomeCurso(e.target.value)}
+                        className={inputClasses}
                     />
 
-                    <button onClick={criarCurso}>
+                    <button onClick={criarCurso} className={buttonClasses}>
                         Salvar curso
                     </button>
                 </div>
@@ -80,6 +92,7 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
                 onChange={(e) =>
                     setAluno(aluno.atualizarCampos({ mensalidade: e.target.value }))
                 }
+                className={inputClasses}
             />
 
             <input
@@ -89,6 +102,7 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
                 onChange={(e) =>
                     setAluno(aluno.atualizarCampos({ dataNascimento: e.target.value }))
                 }
+                className={inputClasses}
             />
 
             <input
@@ -98,6 +112,7 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
                 onChange={(e) =>
                     setAluno(aluno.atualizarCampos({ telefone: e.target.value }))
                 }
+                className={inputClasses}
             />
 
             <input
@@ -107,6 +122,7 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
                 onChange={(e) =>
                     setAluno(aluno.atualizarCampos({ endereco: e.target.value }))
                 }
+                className={inputClasses}
             />
 
             <input
@@ -116,8 +132,9 @@ function FormularioAluno({ aluno, setAluno, cursos, setCursos }) {
                 onChange={(e) =>
                     setAluno(aluno.atualizarCampos({ diaVencimento: e.target.value }))
                 }
+                className={inputClasses}
             />
-        </>
+        </div>
     )
 }
 

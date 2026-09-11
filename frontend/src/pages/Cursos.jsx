@@ -34,7 +34,7 @@ function Cursos(){
 
     return (
         <>
-            <h1>Cursos</h1>
+            <h1 className="text-3xl font-semibold text-white">Cursos</h1>
 
             <button onClick={() => setMostrarFormulario(true)}>
                 + Novo curso

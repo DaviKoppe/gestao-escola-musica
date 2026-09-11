@@ -36,7 +36,7 @@ function Mensalidades() {
 
     return (
         <>
-            <h1>Mensalidades</h1>
+            <h1 className="text-3xl font-semibold text-white">Mensalidades</h1>
 
             {mensalidades.map((mensalidade) =>
             <div key={mensalidade.id}>
