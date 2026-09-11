@@ -24,7 +24,7 @@ function AppSidebar() {
     return (
         <Sidebar variant>
             <SidebarHeader className="px-4 py-3">
-                <span className="text-lg font-semibold">AIDEAL</span>
+                <span className="text-lg font-semibold">Gestão Escola de Música</span>
             </SidebarHeader>
 
             <SidebarContent>
