@@ -166,21 +166,21 @@ function Alunos() {
     return (
         <div className="w-full px-6 py-10 text-left">
             <div className="mb-8">
-                <h1 className="text-3xl font-semibold text-white">Bem-vindo(a) 👋</h1>
+                <h1 className="text-3xl font-semibold text-white">Bem-vindo(a)</h1>
                 <p className="text-gray-500 mt-1">Aqui está um resumo da sua escola de música.</p>
             </div>
 
             <div className="flex gap-4 mb-8">
                 <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-                    <p className="text-sm text-gray-500">💰 Recebido</p>
+                    <p className="text-sm text-gray-500">Recebido</p>
                     <p className="text-2xl font-semibold text-gray-800">R$ {totalRecebido.toFixed(2)}</p>
                 </div>
                 <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-                    <p className="text-sm text-gray-500">⏳ Pendente</p>
+                    <p className="text-sm text-gray-500">Pendente</p>
                     <p className="text-2xl font-semibold text-gray-800">R$ {totalPendente.toFixed(2)}</p>
                 </div>
                 <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-                    <p className="text-sm text-gray-500">🚨 Atrasado</p>
+                    <p className="text-sm text-gray-500">Atrasado</p>
                     <p className="text-2xl font-semibold text-gray-800">R$ {totalAtrasado.toFixed(2)}</p>
                 </div>
             </div>

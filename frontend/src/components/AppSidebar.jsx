@@ -10,12 +10,14 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faDollarSign, faUsers, faChartLine, faGuitar} from '@fortawesome/free-solid-svg-icons';
 
 const itens = [
-    { titulo: "Dashboard", url: "/", icone: "🏠" },
-    { titulo: "Alunos", url: "/alunos", icone: "🎓" },
-    { titulo: "Cursos", url: "/cursos", icone: "📚" },
-    { titulo: "Mensalidades", url: "/mensalidades", icone: "💰" },
+    { titulo: "Dashboard", url: "/", icone: faChartLine },
+    { titulo: "Alunos ", url: "/alunos", icone: faUsers },
+    { titulo: "Cursos", url: "/cursos", icone: faGuitar },
+    { titulo: "Mensalidades", url: "/mensalidades", icone: faDollarSign },
 ]
 
 function AppSidebar() {
@@ -40,8 +42,10 @@ function AppSidebar() {
                                 return (
                                     <SidebarMenuItem key={item.url}>
                                         <SidebarMenuButton asChild isActive={ativo}>
-                                            <NavLink to={item.url}>
-                                                <span>{item.icone}</span>
+                                            <NavLink to={item.url} className="flex items-center gap-2">
+                                                {item.icone && (
+                                                    <FontAwesomeIcon icon={item.icone} className="w-4 h-4" />
+                                                )}
                                                 <span>{item.titulo}</span>
                                             </NavLink>
                                         </SidebarMenuButton>

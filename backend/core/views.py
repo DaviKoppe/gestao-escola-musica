@@ -4,7 +4,7 @@ from datetime import date
 from .models import Mensalidade
 from .models import Pagamento
 from .models import Aluno
-from django.db.models import Sum
+from django.db.models import Sum, Count
 import json
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -186,9 +186,13 @@ def editar_aluno(request, id):
 @api_view(['GET', 'POST'])
 def lista_cursos(request):
     if request.method == 'GET':
-        dados = Curso.objects.all()
+        dados = Curso.objects.annotate(
+            quantidade_alunos=Count('alunos')
+        )
+
         serializer = CursoSerializer(dados, many=True)
         return Response(serializer.data)
+
     if request.method == 'POST':
         serializer = CursoSerializer(data=request.data)
 

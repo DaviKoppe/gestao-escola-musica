@@ -1,10 +1,24 @@
 from rest_framework import serializers
-from .models import Aluno, Curso, Mensalidade, Pagamento
+from .models import Aluno, Curso, Mensalidade, Pagamento, Professor
+
+class ProfessorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Professor
+        fields = ['id', 'nome']
+
 
 class CursoSerializer(serializers.ModelSerializer):
+    professores = ProfessorSerializer(many=True, read_only=True)
+    quantidade_alunos = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Curso
-        fields = ['id', 'nome']
+        fields = [
+            'id',
+            'nome',
+            'quantidade_alunos',
+            'professores',
+        ]
 
 class AlunoSerializer(serializers.ModelSerializer):
     curso_nome = serializers.CharField(source='curso.nome', read_only=True)

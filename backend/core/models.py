@@ -54,10 +54,12 @@ class Aluno(models.Model):
 
 # Professor
 class Professor(models.Model):
-    ordering = ['nome']
     nome = models.CharField(max_length=255)
-    data_nascimento = models.DateField(blank=True,null=True)
-    cursos = models.ManyToManyField(Curso)
+    data_nascimento = models.DateField(blank=True, null=True)
+    cursos = models.ManyToManyField(
+        Curso,
+        related_name='professores'
+    )
 
     def __str__(self):
         return self.nome
