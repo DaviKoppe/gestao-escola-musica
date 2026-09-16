@@ -60,6 +60,7 @@ class Professor(models.Model):
         Curso,
         related_name='professores'
     )
+    ativo = models.BooleanField(default=True)
 
     def __str__(self):
         return self.nome

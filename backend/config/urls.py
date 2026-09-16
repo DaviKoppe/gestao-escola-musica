@@ -1,19 +1,13 @@
 from django.contrib import admin
 from django.urls import path
-from core.views import dashboard
-from core.views import registrar_pagamento
-from core.views import historico_aluno
-from core.views import efetivar_aluno
-from core.views import lista_cursos
-from core.views import editar_aluno
-from core.views import lista_mensalidades
-from core.views import registrar_pagamento_api
-
+from core.views import (dashboard, registrar_pagamento_api, lista_mensalidades,
+                        editar_aluno, lista_cursos, efetivar_aluno, historico_aluno,
+                        registrar_pagamento, lista_dados, lista_professores,
+                        editar_professor)
 from django.urls import re_path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from core.views import lista_dados  
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -39,5 +33,7 @@ urlpatterns = [
     path('api/cursos/', lista_cursos, name='lista_cursos'),
     path('api/mensalidades/', lista_mensalidades, name='lista_mensalidades'),
     path('api/mensalidades/<int:mensalidade_id>/pagar/',registrar_pagamento_api,name='registrar_pagamento_api'),
+    path('api/professores/', lista_professores, name='lista_professores'),
+    path('api/professores/<int:id>/', editar_professor, name='editar_professor'),
 ]
 

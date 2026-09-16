@@ -2,13 +2,24 @@ from rest_framework import serializers
 from .models import Aluno, Curso, Mensalidade, Pagamento, Professor
 
 class ProfessorSerializer(serializers.ModelSerializer):
+    cursos = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Curso.objects.all(),
+        required=False
+    )
+
     class Meta:
         model = Professor
-        fields = ['id', 'nome']
-
+        fields = [
+            'id',
+            'nome',
+            'data_nascimento',
+            'cursos',
+            'ativo',
+        ]
 
 class CursoSerializer(serializers.ModelSerializer):
-    professores = ProfessorSerializer(many=True, read_only=True)
+    professores = serializers.SerializerMethodField()
     quantidade_alunos = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -20,8 +31,22 @@ class CursoSerializer(serializers.ModelSerializer):
             'professores',
         ]
 
+    def get_professores(self, curso):
+        professores_ativos = curso.professores.filter(ativo=True)
+        return ProfessorSerializer(
+            professores_ativos,
+            many=True
+        ).data
+
 class AlunoSerializer(serializers.ModelSerializer):
     curso_nome = serializers.CharField(source='curso.nome', read_only=True)
+
+    def validate_dia_vencimento(self, value):
+        if not 1 <= value <= 28:
+            raise serializers.ValidationError(
+                "Dia de vencimento deve estar entre 1 e 28."
+            )
+        return value
 
     class Meta:
         model = Aluno
@@ -40,6 +65,8 @@ class AlunoSerializer(serializers.ModelSerializer):
             'ativo',
             'experimental',
         ]
+
+
 
 class MensalidadeSerializer(serializers.ModelSerializer):
     aluno_nome = serializers.CharField(source='aluno.nome', read_only=True)
@@ -67,9 +94,3 @@ class PagamentoSerializer(serializers.ModelSerializer):
             'forma_pagamento',
             'numero_nota'
         ]
-
-
-def validate_dia_vencimento(self, value):
-    if not 1 <= value <= 28:
-        raise serializers.ValidationError("Dia de vencimento deve estar entre 1 e 28.")
-    return value

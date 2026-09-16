@@ -1,17 +1,12 @@
 from django.shortcuts import render
 from django.shortcuts import redirect, get_object_or_404
 from datetime import date
-from .models import Mensalidade
-from .models import Pagamento
-from .models import Aluno
-from django.db.models import Sum, Count
+from .models import Aluno, Mensalidade, Pagamento, Professor, Curso
+from django.db.models import Sum, Count, Q
 import json
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Aluno
-from .serializers import AlunoSerializer
-from .serializers import AlunoSerializer, CursoSerializer, MensalidadeSerializer, PagamentoSerializer
-from .models import Curso
+from .serializers import AlunoSerializer, CursoSerializer, MensalidadeSerializer, PagamentoSerializer, ProfessorSerializer
 from django.views.decorators.csrf import csrf_exempt
 
 def dashboard(request):
@@ -187,7 +182,10 @@ def editar_aluno(request, id):
 def lista_cursos(request):
     if request.method == 'GET':
         dados = Curso.objects.annotate(
-            quantidade_alunos=Count('alunos')
+            quantidade_alunos=Count(
+                'alunos',
+                filter=Q(alunos__ativo=True)
+            )
         )
 
         serializer = CursoSerializer(dados, many=True)
@@ -199,7 +197,57 @@ def lista_cursos(request):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
+
         return Response(serializer.errors, status=400)
+
+@api_view(['GET', 'POST'])
+def lista_professores(request):
+
+    if request.method == 'GET':
+        dados = Professor.objects.all()
+        serializer = ProfessorSerializer(dados, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        serializer = ProfessorSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+
+        return Response(serializer.errors, status=400)
+
+@api_view(['PATCH', 'DELETE'])
+def editar_professor(request, id):
+    try:
+        professor = Professor.objects.get(id=id)
+    except Professor.DoesNotExist:
+        return Response(
+            {"erro": "Professor não encontrado."},
+            status=404
+        )
+
+    if request.method == 'PATCH':
+        serializer = ProfessorSerializer(
+            professor,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=400)
+
+    if request.method == 'DELETE':
+        professor.ativo = False
+        professor.save()
+
+        return Response(
+            {"mensagem": "Professor inativado com sucesso."},
+            status=200
+        )
 
 @api_view(['GET'])
 def lista_mensalidades(request):
