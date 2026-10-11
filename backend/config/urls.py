@@ -3,7 +3,7 @@ from django.urls import path
 from core.views import (dashboard, registrar_pagamento_api, lista_mensalidades,
                         editar_aluno, lista_cursos, efetivar_aluno, historico_aluno,
                         registrar_pagamento, lista_dados, lista_professores,
-                        editar_professor)
+                        editar_professor, dashboard_api)
 from django.urls import re_path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
@@ -35,5 +35,6 @@ urlpatterns = [
     path('api/mensalidades/<int:mensalidade_id>/pagar/',registrar_pagamento_api,name='registrar_pagamento_api'),
     path('api/professores/', lista_professores, name='lista_professores'),
     path('api/professores/<int:id>/', editar_professor, name='editar_professor'),
+    path('api/dashboard/', dashboard_api, name='dashboard_api'),
 ]
 

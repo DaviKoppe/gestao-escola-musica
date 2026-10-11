@@ -8,6 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .serializers import AlunoSerializer, CursoSerializer, MensalidadeSerializer, PagamentoSerializer, ProfessorSerializer
 from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 
 def dashboard(request):
     hoje = date.today()
@@ -65,7 +66,72 @@ def dashboard(request):
 
     return render(request, 'dashboard.html', context)
 
+def dashboard_api(request):
+    hoje = date.today()
+    mes_ref = request.GET.get('mes') or hoje.strftime("%Y-%m")
 
+    mensalidades = Mensalidade.objects.filter(
+        mes_referencia=mes_ref
+    )
+
+    for mensalidade in mensalidades:
+        mensalidade.atualizar_status()
+
+    total_recebido = mensalidades.filter(
+        status='pago'
+    ).aggregate(total=Sum('valor'))['total'] or 0
+
+    total_pendente = mensalidades.filter(
+        status='pendente'
+    ).aggregate(total=Sum('valor'))['total'] or 0
+
+    total_atrasado = mensalidades.filter(
+        status='atrasado'
+    ).aggregate(total=Sum('valor'))['total'] or 0
+
+    quantidade_mensalidades = mensalidades.count()
+
+    quantidade_pagas = mensalidades.filter(
+        status='pago'
+    ).count()
+
+    quantidade_pendentes = mensalidades.filter(
+        status='pendente'
+    ).count()
+
+    quantidade_atrasadas = mensalidades.filter(
+        status='atrasado'
+    ).count()
+
+    qtd_inadimplentes = mensalidades.filter(
+        status='atrasado'
+    ).values('aluno').distinct().count()
+
+    quantidade_alunos = Aluno.objects.filter(
+        ativo=True
+    ).count()
+
+    return JsonResponse({
+        "mes": mes_ref,
+
+        "receitas": {
+            "recebido": float(total_recebido),
+            "pendente": float(total_pendente),
+            "atrasado": float(total_atrasado),
+        },
+
+        "mensalidades": {
+            "total": quantidade_mensalidades,
+            "pagas": quantidade_pagas,
+            "pendentes": quantidade_pendentes,
+            "atrasadas": quantidade_atrasadas,
+        },
+
+        "alunos": {
+            "ativos": quantidade_alunos,
+            "inadimplentes": qtd_inadimplentes,
+        },
+    })
 
 def registrar_pagamento(request, mensalidade_id):
     mensalidade = get_object_or_404(Mensalidade, id=mensalidade_id)
