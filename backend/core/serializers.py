@@ -303,7 +303,8 @@ class AulaSerializer(serializers.ModelSerializer):
             })
 
         if horario and (
-                horario.professor_id != professor.id
+                not horario.ativo
+                or horario.professor_id != professor.id
                 or horario.dia_semana != {
                     0: 'seg',
                     1: 'ter',
@@ -316,8 +317,8 @@ class AulaSerializer(serializers.ModelSerializer):
         ):
             raise serializers.ValidationError({
                 'horario': (
-                    'O horário semanal não corresponde ao professor, '
-                    'à data ou ao horário de início.'
+                    'O horário semanal está inativo ou não corresponde '
+                    'ao professor, à data ou ao horário de início.'
                 )
             })
 
