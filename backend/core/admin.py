@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Aluno, Professor, Aula, Mensalidade, Pagamento, Curso
+from .models import Aluno, Professor, Aula, Mensalidade, Pagamento, Curso, RecorrenciaAula
 from .services import gerar_mensalidades
 
 @admin.register(Aluno)
@@ -39,3 +39,11 @@ class PagamentoAdmin(admin.ModelAdmin):
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
     list_display = ('nome',)
+
+
+
+@admin.register(RecorrenciaAula)
+class RecorrenciaAulaAdmin(admin.ModelAdmin):
+    list_display = ('aluno', 'horario', 'data_inicio', 'data_fim', 'ativo')
+    list_filter = ('ativo', 'horario__professor')
+    search_fields = ('aluno__nome', 'horario__professor__nome')

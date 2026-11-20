@@ -100,6 +100,34 @@ class HorarioProfessor(models.Model):
         return f'{self.professor} - {self.get_dia_semana_display()} {self.horario}'
 
 
+class RecorrenciaAula(models.Model):
+    aluno = models.ForeignKey(
+        Aluno,
+        on_delete=models.PROTECT,
+        related_name='recorrencias_aulas'
+    )
+    horario = models.ForeignKey(
+        HorarioProfessor,
+        on_delete=models.PROTECT,
+        related_name='recorrencias'
+    )
+    data_inicio = models.DateField()
+    data_fim = models.DateField(null=True, blank=True)
+    ativo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['aluno__nome', 'horario__dia_semana', 'horario__horario']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['aluno', 'horario', 'data_inicio'],
+                name='recorrencia_aluno_horario_inicio_unica'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.aluno} - {self.horario}'
+
+
 class Aula(models.Model):
     TIPO_CHOICES = [
         ('regular', 'Regular'),
@@ -136,6 +164,14 @@ class Aula(models.Model):
         related_name='aulas'
     )
 
+    recorrencia = models.ForeignKey(
+        'RecorrenciaAula',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='aulas'
+    )
+    cortesia = models.BooleanField(default=False)
     data = models.DateField(null=True, blank=True)
     hora_inicio = models.TimeField(null=True, blank=True)
     hora_fim = models.TimeField(null=True, blank=True)
@@ -163,6 +199,13 @@ class Aula(models.Model):
 
     class Meta:
         ordering = ['data', 'hora_inicio']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recorrencia', 'data'],
+                condition=models.Q(recorrencia__isnull=False),
+                name='aula_recorrencia_data_unica'
+            )
+        ]
 
     def __str__(self):
         return f'{self.aluno} - {self.curso}'

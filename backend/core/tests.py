@@ -10,7 +10,9 @@ from .models import (
     Curso,
     ExcecaoDisponibilidade,
     HorarioProfessor,
+    Mensalidade,
     Professor,
+    RecorrenciaAula,
 )
 from .serializers import AulaSerializer
 
@@ -319,3 +321,128 @@ class AulaAgendamentoTests(APITestCase):
         self.assertEqual(len(resposta_paginada.data["results"]), 10)
         self.assertIsNotNone(resposta_paginada.data["next"])
 
+
+
+
+class RecorrenciaAulaTests(APITestCase):
+    def setUp(self):
+        self.curso = Curso.objects.create(nome='Bateria')
+        self.professor = Professor.objects.create(nome='Professor de teste', ativo=True)
+        self.professor.cursos.add(self.curso)
+        self.aluno = Aluno.objects.create(
+            nome='Aluno de teste', curso=self.curso,
+            data_nascimento=date(2000, 1, 1), telefone='21999999999',
+            email='aluno@example.com', endereco='Rua de teste',
+            valor_mensalidade='190.00', dia_vencimento=10,
+            ativo=True, experimental=False,
+        )
+        self.horario = HorarioProfessor.objects.create(
+            professor=self.professor, dia_semana='seg',
+            horario=time(9, 0), ativo=True,
+        )
+    def criar_recorrencia(self, **overrides):
+        dados = {
+            'aluno': self.aluno.pk,
+            'horario': self.horario.pk,
+            'data_inicio': date(2026, 11, 1).isoformat(),
+            'ativo': True,
+        }
+        dados.update(overrides)
+        response = self.client.post(
+            reverse('recorrencia-aula-list'),
+            dados,
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        return response.data
+
+    def test_cadastra_recorrencia_semanal(self):
+        dados = self.criar_recorrencia()
+        self.assertEqual(dados['aluno'], self.aluno.pk)
+        self.assertEqual(dados['horario'], self.horario.pk)
+        self.assertEqual(dados['dia_semana'], 'seg')
+
+    def test_nao_permite_recorrencia_duplicada_ativa(self):
+        self.criar_recorrencia()
+        response = self.client.post(
+            reverse('recorrencia-aula-list'),
+            {
+                'aluno': self.aluno.pk,
+                'horario': self.horario.pk,
+                'data_inicio': '2026-11-01',
+                'ativo': True,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_gera_quatro_aulas_e_quinta_como_cortesia(self):
+        self.criar_recorrencia()
+        response = self.client.post(
+            reverse('gerar-aulas-recorrentes'),
+            {'mes': '2026-11'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        aulas = Aula.objects.filter(recorrencia__isnull=False).order_by('data')
+        self.assertEqual(aulas.count(), 5)
+        self.assertEqual(aulas.filter(cortesia=True).count(), 1)
+        self.assertEqual(
+            list(aulas.filter(cortesia=True).values_list('data', flat=True)),
+            [date(2026, 11, 30)],
+        )
+
+    def test_geracao_de_recorrencias_e_idempotente(self):
+        self.criar_recorrencia()
+        url = reverse('gerar-aulas-recorrentes')
+        primeira = self.client.post(url, {'mes': '2026-11'}, format='json')
+        segunda = self.client.post(url, {'mes': '2026-11'}, format='json')
+        self.assertEqual(primeira.data['aulas_criadas'], 5)
+        self.assertEqual(segunda.data['aulas_criadas'], 0)
+        self.assertEqual(segunda.data['aulas_ja_existentes'], 5)
+
+    def test_nao_gera_aulas_antes_do_inicio_da_recorrencia(self):
+        self.criar_recorrencia(data_inicio='2026-11-10')
+        response = self.client.post(
+            reverse('gerar-aulas-recorrentes'),
+            {'mes': '2026-11'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(response.data['aulas_criadas'], 3)
+        self.assertEqual(
+            Aula.objects.filter(recorrencia__isnull=False, cortesia=True).count(),
+            0,
+        )
+
+    def test_rejeita_mes_em_formato_invalido(self):
+        response = self.client.post(
+            reverse('gerar-aulas-recorrentes'),
+            {'mes': '11/2026'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class StatusMensalidadeTests(APITestCase):
+    def test_mensalidade_vencida_aparece_atrasada_sem_bloquear_aluno(self):
+        curso = Curso.objects.create(nome='Violão')
+        aluno = Aluno.objects.create(
+            nome='Aluno com mensalidade vencida',
+            curso=curso,
+            data_nascimento=date(2000, 1, 1),
+            telefone='21999999999',
+            endereco='Rua de teste',
+            valor_mensalidade='190.00',
+            dia_vencimento=10,
+        )
+        mensalidade = Mensalidade.objects.get(aluno=aluno)
+        mensalidade.data_vencimento = date.today() - timedelta(days=1)
+        mensalidade.save(update_fields=['data_vencimento'])
+
+        resposta = self.client.get('/api/mensalidades/')
+
+        self.assertEqual(resposta.status_code, status.HTTP_200_OK)
+        mensalidade.refresh_from_db()
+        self.assertEqual(mensalidade.status, 'atrasado')
+        self.assertTrue(aluno.ativo)

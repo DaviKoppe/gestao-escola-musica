@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Aluno, Curso, Mensalidade, Pagamento, Professor, HorarioProfessor, ExcecaoDisponibilidade, Aula
+from .models import Aluno, Curso, Mensalidade, Pagamento, Professor, HorarioProfessor, ExcecaoDisponibilidade, Aula, RecorrenciaAula
 from django.db import models
 
 class ProfessorSerializer(serializers.ModelSerializer):
@@ -239,7 +239,10 @@ class AulaSerializer(serializers.ModelSerializer):
             'tipo',
             'status',
             'observacoes',
+            'recorrencia',
+            'cortesia',
         ]
+        read_only_fields = ['recorrencia', 'cortesia']
 
     def validate(self, data):
         atual = self.instance
@@ -384,5 +387,63 @@ class AulaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'O aluno ou o professor já possui uma aula nesse intervalo.'
             )
+
+        return data
+
+
+class RecorrenciaAulaSerializer(serializers.ModelSerializer):
+    aluno_nome = serializers.CharField(source='aluno.nome', read_only=True)
+    professor = serializers.IntegerField(source='horario.professor_id', read_only=True)
+    professor_nome = serializers.CharField(source='horario.professor.nome', read_only=True)
+    curso = serializers.IntegerField(source='aluno.curso_id', read_only=True)
+    curso_nome = serializers.CharField(source='aluno.curso.nome', read_only=True)
+    dia_semana = serializers.CharField(source='horario.dia_semana', read_only=True)
+    hora_inicio = serializers.TimeField(source='horario.horario', read_only=True)
+
+    class Meta:
+        model = RecorrenciaAula
+        fields = [
+            'id', 'aluno', 'aluno_nome', 'horario', 'professor',
+            'professor_nome', 'curso', 'curso_nome', 'dia_semana',
+            'hora_inicio', 'data_inicio', 'data_fim', 'ativo',
+        ]
+
+    def validate(self, data):
+        atual = self.instance
+        aluno = data.get('aluno', getattr(atual, 'aluno', None))
+        horario = data.get('horario', getattr(atual, 'horario', None))
+        data_inicio = data.get('data_inicio', getattr(atual, 'data_inicio', None))
+        data_fim = data.get('data_fim', getattr(atual, 'data_fim', None))
+
+        if aluno and not aluno.ativo:
+            raise serializers.ValidationError({
+                'aluno': 'Não é possível criar recorrência para aluno inativo.'
+            })
+        if horario and (not horario.ativo or not horario.professor.ativo):
+            raise serializers.ValidationError({
+                'horario': 'O horário ou o professor está inativo.'
+            })
+        if aluno and horario and aluno.curso_id not in horario.professor.cursos.values_list('id', flat=True):
+            raise serializers.ValidationError({
+                'horario': 'O professor não está vinculado ao curso do aluno.'
+            })
+        if data_inicio and data_fim and data_fim < data_inicio:
+            raise serializers.ValidationError({
+                'data_fim': 'A data final não pode ser anterior à data inicial.'
+            })
+        if atual and aluno and horario:
+            duplicada = RecorrenciaAula.objects.filter(
+                aluno=aluno, horario=horario, ativo=True
+            ).exclude(pk=atual.pk)
+            if duplicada.exists():
+                raise serializers.ValidationError({
+                    'horario': 'O aluno já possui uma recorrência ativa nesse horário.'
+                })
+        elif aluno and horario and RecorrenciaAula.objects.filter(
+            aluno=aluno, horario=horario, ativo=True
+        ).exists():
+            raise serializers.ValidationError({
+                'horario': 'O aluno já possui uma recorrência ativa nesse horário.'
+            })
 
         return data

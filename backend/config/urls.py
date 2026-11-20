@@ -5,6 +5,7 @@ from core.views import (
     dashboard, registrar_pagamento_api, lista_mensalidades, editar_aluno, lista_cursos, efetivar_aluno, historico_aluno,
     registrar_pagamento, lista_dados, lista_professores, editar_professor, dashboard_api, AulaViewSet,
     HorarioProfessorViewSet, ExcecaoDisponibilidadeViewSet, disponibilidade_professor,
+    RecorrenciaAulaViewSet, gerar_aulas_recorrentes_api,
 )
 
 from rest_framework import permissions
@@ -35,6 +36,12 @@ router.register(
     "horarios-professores",
     HorarioProfessorViewSet,
     basename="horario-professor",
+)
+
+router.register(
+    "recorrencias-aulas",
+    RecorrenciaAulaViewSet,
+    basename="recorrencia-aula",
 )
 
 router.register(
@@ -79,6 +86,11 @@ urlpatterns = [
     path("api/professores/", lista_professores, name="lista_professores"),
     path("api/professores/<int:id>/", editar_professor, name="editar_professor"),
     path("api/dashboard/", dashboard_api, name="dashboard_api"),
+    path(
+        "api/aulas/gerar-recorrencias/",
+        gerar_aulas_recorrentes_api,
+        name="gerar-aulas-recorrentes",
+    ),
     path(
         "api/disponibilidade-professor/",
         disponibilidade_professor,

@@ -12,6 +12,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
+from .services import gerar_aulas_recorrentes
 from .serializers import AlunoSerializer, CursoSerializer, MensalidadeSerializer, PagamentoSerializer, ProfessorSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -19,11 +20,13 @@ from .models import (
     Aula,
     HorarioProfessor,
     ExcecaoDisponibilidade,
+    RecorrenciaAula,
 )
 from .serializers import (
     AulaSerializer,
     HorarioProfessorSerializer,
     ExcecaoDisponibilidadeSerializer,
+    RecorrenciaAulaSerializer,
 )
 
 
@@ -404,7 +407,15 @@ def editar_professor(request, id):
 
 @api_view(['GET'])
 def lista_mensalidades(request):
-    dados = Mensalidade.objects.filter(aluno__ativo=True)
+    hoje = date.today()
+    mensalidades_ativas = Mensalidade.objects.filter(aluno__ativo=True)
+    mensalidades_ativas.exclude(status='pago').filter(
+        data_vencimento__lt=hoje
+    ).update(status='atrasado')
+    mensalidades_ativas.exclude(status='pago').filter(
+        data_vencimento__gte=hoje
+    ).update(status='pendente')
+    dados = mensalidades_ativas
     serializer = MensalidadeSerializer(dados, many=True)
     return Response(serializer.data)
 
@@ -745,3 +756,35 @@ def disponibilidade_professor(request):
         })
 
     return Response(resultado)
+
+
+class RecorrenciaAulaViewSet(viewsets.ModelViewSet):
+    serializer_class = RecorrenciaAulaSerializer
+
+    def get_queryset(self):
+        queryset = RecorrenciaAula.objects.select_related(
+            'aluno', 'aluno__curso', 'horario', 'horario__professor'
+        ).all()
+        aluno_id = self.request.query_params.get('aluno')
+        professor_id = self.request.query_params.get('professor')
+        ativo = self.request.query_params.get('ativo')
+
+        if aluno_id:
+            queryset = queryset.filter(aluno_id=aluno_id)
+        if professor_id:
+            queryset = queryset.filter(horario__professor_id=professor_id)
+        if ativo in ('true', 'false'):
+            queryset = queryset.filter(ativo=(ativo == 'true'))
+        return queryset
+
+
+@api_view(['POST'])
+def gerar_aulas_recorrentes_api(request):
+    mes = request.data.get('mes')
+    if not mes:
+        return Response(
+            {'mes': 'Informe o mês no formato AAAA-MM.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    resultado = gerar_aulas_recorrentes(mes)
+    return Response(resultado, status=status.HTTP_201_CREATED)
