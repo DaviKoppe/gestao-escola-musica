@@ -10,6 +10,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import ValidationError
 from .serializers import AlunoSerializer, CursoSerializer, MensalidadeSerializer, PagamentoSerializer, ProfessorSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -476,8 +478,15 @@ class ExcecaoDisponibilidadeViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+class AulaPaginacao(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class AulaViewSet(viewsets.ModelViewSet):
     serializer_class = AulaSerializer
+    pagination_class = AulaPaginacao
 
     def get_queryset(self):
         queryset = Aula.objects.select_related(
@@ -487,10 +496,13 @@ class AulaViewSet(viewsets.ModelViewSet):
             'horario',
         ).all()
 
-        professor_id = self.request.query_params.get('professor')
-        aluno_id = self.request.query_params.get('aluno')
-        data = self.request.query_params.get('data')
-        status_aula = self.request.query_params.get('status')
+        parametros = self.request.query_params
+        professor_id = parametros.get('professor')
+        aluno_id = parametros.get('aluno')
+        data = parametros.get('data')
+        data_inicio = parametros.get('data_inicio')
+        data_fim = parametros.get('data_fim')
+        status_aula = parametros.get('status')
 
         if professor_id:
             queryset = queryset.filter(professor_id=professor_id)
@@ -501,13 +513,49 @@ class AulaViewSet(viewsets.ModelViewSet):
         if data:
             data_validada = parse_date(data)
             if not data_validada:
-                return queryset.none()
+                raise ValidationError({
+                    'data': 'Data inválida. Use o formato AAAA-MM-DD.'
+                })
             queryset = queryset.filter(data=data_validada)
+
+        if data_inicio:
+            inicio_validado = parse_date(data_inicio)
+            if not inicio_validado:
+                raise ValidationError({
+                    'data_inicio': 'Data inválida. Use o formato AAAA-MM-DD.'
+                })
+            queryset = queryset.filter(data__gte=inicio_validado)
+
+        if data_fim:
+            fim_validado = parse_date(data_fim)
+            if not fim_validado:
+                raise ValidationError({
+                    'data_fim': 'Data inválida. Use o formato AAAA-MM-DD.'
+                })
+            queryset = queryset.filter(data__lte=fim_validado)
+
+        if data_inicio and data_fim and inicio_validado > fim_validado:
+            raise ValidationError({
+                'data_inicio': 'A data inicial não pode ser posterior à data final.'
+            })
 
         if status_aula:
             queryset = queryset.filter(status=status_aula)
 
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Mantém o formato de lista atual para não quebrar a interface existente.
+        # A resposta paginada é ativada quando a requisição informa "page" ou "page_size".
+        if 'page' in request.query_params or 'page_size' in request.query_params:
+            pagina = self.paginate_queryset(queryset)
+            serializer = self.get_serializer(pagina, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def perform_destroy(self, instance):
         instance.status = 'cancelada'

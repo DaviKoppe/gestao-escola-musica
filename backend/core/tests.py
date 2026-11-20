@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, time, timedelta
 
 from django.urls import reverse
 from rest_framework import status
@@ -192,3 +192,130 @@ class AulaAgendamentoTests(APITestCase):
         aula.refresh_from_db()
         self.assertEqual(aula.status, "cancelada")
         self.assertTrue(Aula.objects.filter(pk=aula.pk).exists())
+
+
+    def test_filtra_aulas_por_professor_aluno_e_status(self):
+        aula = self.criar_aula()
+        aula.status = "realizada"
+        aula.save(update_fields=["status"])
+
+        outro_professor = Professor.objects.create(
+            nome="Outro professor",
+            ativo=True,
+        )
+        outro_professor.cursos.add(self.curso)
+
+        outro_aluno = Aluno.objects.create(
+            nome="Outro aluno",
+            curso=self.curso,
+            data_nascimento=date(2001, 1, 1),
+            telefone="21988888888",
+            endereco="Outra rua",
+            valor_mensalidade="190.00",
+            dia_vencimento=10,
+        )
+        outro_horario = HorarioProfessor.objects.create(
+            professor=outro_professor,
+            dia_semana="seg",
+            horario=time(9, 0),
+        )
+        serializer = AulaSerializer(data={
+            **self.payload(),
+            "aluno": outro_aluno.pk,
+            "professor": outro_professor.pk,
+            "horario": outro_horario.pk,
+        })
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        segunda_aula = serializer.save()
+
+        resposta_professor = self.client.get(
+            reverse("aula-list"),
+            {"professor": self.professor.pk},
+        )
+        self.assertEqual(resposta_professor.status_code, status.HTTP_200_OK)
+        self.assertEqual([item["id"] for item in resposta_professor.data], [aula.pk])
+
+        resposta_aluno = self.client.get(
+            reverse("aula-list"),
+            {"aluno": self.aluno.pk},
+        )
+        self.assertEqual([item["id"] for item in resposta_aluno.data], [aula.pk])
+
+        resposta_status = self.client.get(
+            reverse("aula-list"),
+            {"status": "agendada"},
+        )
+        self.assertEqual(
+            [item["id"] for item in resposta_status.data],
+            [segunda_aula.pk],
+        )
+
+    def test_filtra_aulas_por_intervalo_de_datas(self):
+        primeira_aula = self.criar_aula()
+        segunda_data = date(2026, 11, 9)
+        segunda_aula = self.criar_aula(data=segunda_data.isoformat())
+
+        resposta = self.client.get(
+            reverse("aula-list"),
+            {
+                "data_inicio": "2026-11-02",
+                "data_fim": "2026-11-02",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [item["id"] for item in resposta.data],
+            [primeira_aula.pk],
+        )
+        self.assertNotIn(
+            segunda_aula.pk,
+            [item["id"] for item in resposta.data],
+        )
+
+    def test_rejeita_intervalo_de_datas_invertido(self):
+        resposta = self.client.get(
+            reverse("aula-list"),
+            {
+                "data_inicio": "2026-11-10",
+                "data_fim": "2026-11-02",
+            },
+        )
+
+        self.assertEqual(
+            resposta.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("data_inicio", resposta.data)
+
+    def test_rejeita_data_em_formato_invalido(self):
+        resposta = self.client.get(
+            reverse("aula-list"),
+            {"data_inicio": "02-11-2026"},
+        )
+
+        self.assertEqual(
+            resposta.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("data_inicio", resposta.data)
+
+    def test_paginacao_sob_demanda_preserva_lista_padrao(self):
+        for semana in range(21):
+            data_aula = date(2026, 11, 2) + timedelta(weeks=semana)
+            self.criar_aula(data=data_aula.isoformat())
+
+        resposta_padrao = self.client.get(reverse("aula-list"))
+        self.assertIsInstance(resposta_padrao.data, list)
+        self.assertEqual(len(resposta_padrao.data), 21)
+
+        resposta_paginada = self.client.get(
+            reverse("aula-list"),
+            {"page": 1, "page_size": 10},
+        )
+
+        self.assertEqual(resposta_paginada.status_code, status.HTTP_200_OK)
+        self.assertEqual(resposta_paginada.data["count"], 21)
+        self.assertEqual(len(resposta_paginada.data["results"]), 10)
+        self.assertIsNotNone(resposta_paginada.data["next"])
+
