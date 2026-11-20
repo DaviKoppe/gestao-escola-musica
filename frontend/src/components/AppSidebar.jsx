@@ -11,12 +11,20 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faDollarSign, faUsers, faChartLine, faGuitar, faChalkboardUser} from '@fortawesome/free-solid-svg-icons';
+import {
+    faDollarSign,
+    faUsers,
+    faChartLine,
+    faGuitar,
+    faChalkboardUser,
+    faCalendarCheck
+} from '@fortawesome/free-solid-svg-icons';
 
 const itens = [
     { titulo: "Dashboard", url: "/", icone: faChartLine },
     { titulo: "Alunos ", url: "/alunos", icone: faUsers },
     { titulo: "Professores", url: "/professores", icone: faChalkboardUser },
+    { titulo: "Aulas", url: "/aulas", icone: faCalendarCheck },
     { titulo: "Cursos", url: "/cursos", icone: faGuitar },
     { titulo: "Mensalidades", url: "/mensalidades", icone: faDollarSign },
 ]

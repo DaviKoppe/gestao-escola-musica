@@ -66,42 +66,169 @@ class Professor(models.Model):
         return self.nome
 
 class HorarioProfessor(models.Model):
-    professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
+    DIA_SEMANA_CHOICES = [
+        ('seg', 'Segunda'),
+        ('ter', 'Terça'),
+        ('qua', 'Quarta'),
+        ('qui', 'Quinta'),
+        ('sex', 'Sexta'),
+        ('sab', 'Sábado'),
+    ]
+
+    professor = models.ForeignKey(
+        Professor,
+        on_delete=models.CASCADE,
+        related_name='horarios'
+    )
+    dia_semana = models.CharField(
+        max_length=3,
+        choices=DIA_SEMANA_CHOICES
+    )
+    horario = models.TimeField()
+    ativo = models.BooleanField(default=True)
 
     class Meta:
-        unique_together = ['professor', 'dia_semana', 'horario']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['professor', 'dia_semana', 'horario'],
+                name='horario_professor_unico'
+            )
+        ]
+        ordering = ['dia_semana', 'horario']
 
-    DIA_SEMANA_CHOICES = [
-        ('seg', 'Segunda'),
-        ('ter', 'Terça'),
-        ('qua', 'Quarta'),
-        ('qui', 'Quinta'),
-        ('sex', 'Sexta'),
-        ('sab', 'Sábado'),
-    ]
+    def __str__(self):
+        return f'{self.professor} - {self.get_dia_semana_display()} {self.horario}'
 
-    dia_semana = models.CharField(max_length=3, choices=DIA_SEMANA_CHOICES)
-    horario = models.TimeField()
-    
-# Aula
+
 class Aula(models.Model):
-    aluno = models.ForeignKey(Aluno, on_delete = models.CASCADE)
-    horario = models.ForeignKey(HorarioProfessor, on_delete=models.CASCADE)
-    curso = models.ForeignKey(Curso, on_delete=models.CASCADE)
-    professor = models.ForeignKey(Professor, on_delete = models.CASCADE)
-    DIA_SEMANA_CHOICES = [
-        ('seg', 'Segunda'),
-        ('ter', 'Terça'),
-        ('qua', 'Quarta'),
-        ('qui', 'Quinta'),
-        ('sex', 'Sexta'),
-        ('sab', 'Sábado'),
+    TIPO_CHOICES = [
+        ('regular', 'Regular'),
+        ('experimental', 'Experimental'),
     ]
-    dia_semana = models.CharField(max_length=3, choices=DIA_SEMANA_CHOICES)
 
+    STATUS_CHOICES = [
+        ('agendada', 'Agendada'),
+        ('realizada', 'Realizada'),
+        ('cancelada', 'Cancelada'),
+        ('falta', 'Falta do aluno'),
+    ]
+
+    aluno = models.ForeignKey(
+        Aluno,
+        on_delete=models.PROTECT,
+        related_name='aulas'
+    )
+    horario = models.ForeignKey(
+        HorarioProfessor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='aulas'
+    )
+    curso = models.ForeignKey(
+        Curso,
+        on_delete=models.PROTECT,
+        related_name='aulas'
+    )
+    professor = models.ForeignKey(
+        Professor,
+        on_delete=models.PROTECT,
+        related_name='aulas'
+    )
+
+    data = models.DateField(null=True, blank=True)
+    hora_inicio = models.TimeField(null=True, blank=True)
+    hora_fim = models.TimeField(null=True, blank=True)
+
+    tipo = models.CharField(
+        max_length=15,
+        choices=TIPO_CHOICES,
+        default='regular'
+    )
+    status = models.CharField(
+        max_length=15,
+        choices=STATUS_CHOICES,
+        default='agendada'
+    )
+    observacoes = models.TextField(blank=True)
+
+    DIA_SEMANA_CHOICES = HorarioProfessor.DIA_SEMANA_CHOICES
+
+    dia_semana = models.CharField(
+        max_length=3,
+        choices=DIA_SEMANA_CHOICES,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        ordering = ['data', 'hora_inicio']
 
     def __str__(self):
         return f'{self.aluno} - {self.curso}'
+
+    def save(self, *args, **kwargs):
+        if self.tipo == 'experimental' and self.hora_inicio:
+            from datetime import datetime, timedelta
+
+            inicio = datetime.combine(date.today(), self.hora_inicio)
+            self.hora_fim = (inicio + timedelta(minutes=30)).time()
+
+        elif self.tipo == 'regular' and self.hora_inicio:
+            from datetime import datetime, timedelta
+
+            inicio = datetime.combine(date.today(), self.hora_inicio)
+            self.hora_fim = (inicio + timedelta(hours=1)).time()
+
+        if self.data:
+            dias = {
+                0: 'seg',
+                1: 'ter',
+                2: 'qua',
+                3: 'qui',
+                4: 'sex',
+                5: 'sab',
+            }
+            self.dia_semana = dias.get(self.data.weekday())
+
+        super().save(*args, **kwargs)
+
+class ExcecaoDisponibilidade(models.Model):
+    TIPO_CHOICES = [
+        ('bloqueio', 'Indisponibilidade'),
+        ('extra', 'Disponibilidade extraordinária'),
+    ]
+
+    professor = models.ForeignKey(
+        Professor,
+        on_delete=models.CASCADE,
+        related_name='excecoes_disponibilidade'
+    )
+    data = models.DateField()
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField()
+    tipo = models.CharField(
+        max_length=10,
+        choices=TIPO_CHOICES
+    )
+    motivo = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['data', 'hora_inicio']
+
+    def __str__(self):
+        return (
+            f'{self.professor} - {self.data} '
+            f'{self.hora_inicio}-{self.hora_fim}'
+        )
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.hora_fim <= self.hora_inicio:
+            raise ValidationError(
+                'O horário final deve ser posterior ao horário inicial.'
+            )
     
 # Mensalidade
 class Mensalidade(models.Model):

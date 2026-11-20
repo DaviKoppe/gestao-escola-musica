@@ -5,7 +5,8 @@ import Alunos from "./pages/Alunos"
 import Cursos from "./pages/Cursos"
 import Mensalidades from "./pages/Mensalidades"
 import Professores from "./pages/Professores"
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard"
+import Aulas from "./pages/Aulas"
 
 function App() {
     return (
@@ -18,6 +19,7 @@ function App() {
                     <Route path="/cursos" element={<Cursos />} />
                     <Route path="/professores" element={<Professores />} />
                     <Route path="/mensalidades" element={<Mensalidades />} />
+                    <Route path="/aulas" element={<Aulas />} />
                 </Route>
             </Routes>
         </BrowserRouter>
