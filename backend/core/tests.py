@@ -10,7 +10,6 @@ from .models import (
     Curso,
     ExcecaoDisponibilidade,
     HorarioProfessor,
-    Mensalidade,
     Professor,
 )
 from .serializers import AulaSerializer
@@ -101,7 +100,7 @@ class AulaAgendamentoTests(APITestCase):
         outro_horario = HorarioProfessor.objects.create(
             professor=self.professor,
             dia_semana="seg",
-            horario=time(10, 0),
+            horario=time(9, 30),
         )
         serializer = AulaSerializer(data=self.payload(
             horario=outro_horario.pk,
